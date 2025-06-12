@@ -1,0 +1,29 @@
+repos:
+- repo: local
+  hooks:
+  - id: elisp-byte-compile
+    name: Byte compile Emacs Lisp files
+    entry: emacs --batch -f batch-byte-compile
+    language: system
+    files: \.el$
+  - id: elisp-checkdoc
+    name: Checkdoc for Emacs Lisp
+    entry: emacs --batch --eval "(require 'checkdoc) (checkdoc-batch)"
+    language: system
+    files: \.el$
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.6.0
+  hooks:
+    - id: trailing-whitespace
+    - id: end-of-file-fixer
+    - id: check-yaml
+    - id: check-added-large-files
+- repo: https://github.com/commitizen-tools/commitizen
+  rev: v3.29.0
+  hooks:
+    - id: commitizen
+      additional_dependencies: [cz-conventional-gitmoji]
+- repo: https://github.com/ljnsn/cz-conventional-gitmoji
+  rev: v0.7.0
+  hooks:
+    - id: conventional-gitmoji
