@@ -1,29 +1,27 @@
-;;; elcord.el --- Allows you to integrate Rich Presence from Discord
+;;; elcord.el --- Integrates Discord Rich Presence with anime-themed logos
 
 ;; Copyright (C) 2017 heatingdevice
 
 ;; Author: heatingdevice
-;;      Wilfredo Velázquez-Rodríguez <zulu.inuoe@gmail.com>
+;;  Wilfredo Velázquez-Rodríguez <zulu.inuoe@gmail.com>
+;; Forked and modified by: robert-nogueira
 ;; Created: 21 Nov 2017
-;; Version: 1.1.0
-;; Keywords: games
-;; Homepage: https://github.com/Mstrodl/elcord
+;; Version: 1.1.0-weeb
+;; Keywords: games, discord, anime, rich-presence
+;; Homepage: https://github.com/Robert-Nogueira/elcord-weeb
 ;; Package-Requires: ((emacs "25.1"))
 ;; License: MIT
 
 ;;; Commentary:
-;; elcord allows you to show off your buffer with all your Discord friends via the new rich presence feature
-;; To use, enable the global minor mode `elcord-mode'
-;; When enabled, elcord will communicate with the local Discord client in order to display information under
-;; the 'Playing a Game' status, updating this information at a regular interval.
-;;
-;; elcord will display an Emacs title, icon, as well as information about your current buffer:
-;; 1) The name and an icon (if available) for the current major mode
-;; 2) The name of the current buffer
-;; 3) The line number of the cursor, as well as total line count for the buffer
-;; `elcord-display-buffer-details' can be customized so that buffer name and line number are omitted.
+;; Fork of elcord adding support for anime-themed rich presence logos.
+;; Shows buffer info on Discord with custom anime icons.
+;; Enable `elcord-mode` to activate.
+;; Updates 'Playing a Game' status with Emacs title, major mode icon (now anime-themed),
+;; buffer name, and cursor position.
+;; Customize `elcord-display-buffer-details` to hide buffer name and line numbers.
 
 ;;; Code:
+
 
 (require 'bindat)
 (require 'cl-lib)
