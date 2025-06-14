@@ -1,4 +1,4 @@
-;;; elcord.el --- Integrates Discord Rich Presence with anime-themed logos
+;;; elcord.el --- Integrates Discord Rich Presence with extra theme customizations
 
 ;; Copyright (C) 2017 heatingdevice
 
@@ -7,16 +7,16 @@
 ;; Forked and modified by: robert-nogueira
 ;; Created: 21 Nov 2017
 ;; Version: 1.1.0-weeb
-;; Keywords: games, discord, anime, rich-presence
+;; Keywords: games, discord, rich-presence
 ;; Homepage: https://github.com/Robert-Nogueira/elcord-weeb
 ;; Package-Requires: ((emacs "25.1"))
 ;; License: MIT
 
 ;;; Commentary:
-;; Fork of elcord adding support for anime-themed rich presence logos.
-;; Shows buffer info on Discord with custom anime icons.
+;; Fork of elcord adding support a custom theme and icon set.
+;; Shows buffer info on Discord with personalized icons.
 ;; Enable `elcord-mode` to activate.
-;; Updates 'Playing a Game' status with Emacs title, major mode icon (now anime-themed),
+;; Updates 'Playing a Game' status with Emacs title, major mode icon,
 ;; buffer name, and cursor position.
 ;; Customize `elcord-display-buffer-details` to hide buffer name and line numbers.
 
@@ -33,19 +33,34 @@
   :prefix "elcord-"
   :group 'external)
 
-(defcustom elcord-client-id '"388338871475240965"
+(defcustom elcord-client-id "1382406746445709412"
   "ID of elcord client (Application ID).
 See <https://discordapp.com/developers/applications/me>."
-  :type '(choice (const :tag "'Native' Application ID" "388338871475240965")
+  :type '(choice (const :tag "'Native' Application ID" "1382406746445709412")
                  (string :tag "Use the specified ID")
                  (function :tag "Call the function with no args to get the ID."))
   :group 'elcord)
 
+(defcustom elcord-switch-icons nil
+  "When non-nil, swap the large and small icons.
+This makes the mode icon appear as the large icon and the editor icon as the small one."
+  :type 'boolean
+  :group 'elcord)
+
+(defcustom elcord-use-original-icons nil
+  "If non-nil, use the original elcord icons."
+  :type 'boolean
+  :group 'elcord)
+
 (defcustom elcord-icon-base
-  '"https://raw.githubusercontent.com/Mstrodl/elcord/master/icons/"
-  "Base URL for icon images. Mode icons will be loaded from this URL + the icon name + '.png'"
+  (if elcord-use-original-icons
+      "https://raw.githubusercontent.com/Mstrodl/elcord/master/icons/"
+    "https://raw.githubusercontent.com/robert-nogueira/elcord-weeb/master/icons/")
+  "Base URL for icon images. Mode icons will be loaded from this URL + icon name + '.png'"
   :type '(choice (const :tag "Elcord GitHub Repository"
                         "https://raw.githubusercontent.com/Mstrodl/elcord/master/icons/")
+                 (const :tag "Elcord-Weeb GitHub Repository"
+                        "https://raw.githubusercontent.com/Robert-Nogueira/elcord-weeb/master/icons/")
                  (string :tag "Use the specified URL base")
                  (function :tag "Call the function with icon name as an arg to get the URL base."))
   :group 'elcord)
@@ -82,7 +97,6 @@ See <https://discordapp.com/developers/applications/me>."
                                     (elixir-mode . "elixir-mode_icon")
                                     (emacs-lisp-mode . (elcord--editor-icon))
                                     (enh-ruby-mode . "ruby-mode_icon")
-                                    (erc-mode . "irc-mode_icon")
                                     (erlang-mode . "erlang-mode_icon")
                                     (forth-mode . "forth-mode_icon")
                                     (fortran-mode . "fortran-mode_icon")
@@ -147,7 +161,6 @@ Note, these icon names must be available as 'small_image' in Discord."
                                     (erlang-mode . "Erlang")
                                     (fsharp-mode . "F#")
                                     (gdscript-mode . "GDScript")
-                                    (hy-mode . "Hy")
                                     (java-mode . "Java")
                                     (julia-mode . "Julia")
                                     (lisp-mode . "Common Lisp")
@@ -577,7 +590,7 @@ If no text is available, use the value of `mode-name'."
         large-text large-image
         small-text small-image)
     (cond
-     (elcord-use-major-mode-as-main-icon
+     ((or elcord-use-major-mode-as-main-icon elcord-switch-icons)
       (setq large-text text
             large-image icon
             small-text elcord--editor-name
