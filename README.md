@@ -15,9 +15,9 @@ Enhanced Discord Rich Presence integration for Emacs with modern visuals and dee
   - Configurable line number display
 
 - **Enhanced Customization**:
-  - Modern icon sets (including anime-themed alternatives)
-  - switch small and large icon
-  - Button support (up to 2 external links)
+  - Modern icon sets
+  - Switch small and large icon
+  - Flexible button configuration with `:label` and `:url` keywords (up to 2 external links)
 
 ## 🚀 Installation
 
@@ -59,8 +59,10 @@ elisp
   (setq elcord-use-major-mode-as-main-icon t) ; Use language icons as main
 
   ;; Rich presence buttons (max 2)
-  (setq elcord-buttons '(("🌟 My Dotfiles" . "https://github.com/me/dotfiles")
-                         ("🐧 Emacs Config" . "https://github.com/me/emacs-config")))
+  (setq elcord-buttons '((:label "📂 GitHub"
+                         :url "https://github.com/robert-nogueira")
+                         (:label "🌟 My Dotfiles"
+                         :url "https://github.com/me/dotfiles")))
 
   (elcord-mode))  ; Enable the mode
 ```
