@@ -1,4 +1,4 @@
-;;; elcord.el --- Integrates Discord Rich Presence with extra theme customizations
+;;; elcord.el --- Integrates Discord Rich Presence with extra theme customizations  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2017 heatingdevice
 
@@ -22,7 +22,6 @@
 
 ;;; Code:
 
-
 (require 'bindat)
 (require 'cl-lib)
 (require 'json)
@@ -43,7 +42,8 @@ See <https://discordapp.com/developers/applications/me>."
 
 (defcustom elcord-switch-icons nil
   "When non-nil, swap the large and small icons.
-This makes the mode icon appear as the large icon and the editor icon as the small one."
+This makes the mode icon appear as the large icon
+and the editor icon as the small one."
   :type 'boolean
   :group 'elcord)
 
@@ -56,13 +56,35 @@ This makes the mode icon appear as the large icon and the editor icon as the sma
   (if elcord-use-original-icons
       "https://raw.githubusercontent.com/Mstrodl/elcord/master/icons/"
     "https://raw.githubusercontent.com/robert-nogueira/elcord-enchanced/master/icons/")
-  "Base URL for icon images. Mode icons will be loaded from this URL + icon name + '.png'"
+  "Base URL for icon images.
+Mode icons will be loaded from this URL + icon name + '.png'"
   :type '(choice (const :tag "Elcord GitHub Repository"
-                        "https://raw.githubusercontent.com/Mstrodl/elcord/master/icons/")
+                 "https://raw.githubusercontent.com/Mstrodl/elcord/master/icons/")
                  (const :tag "Elcord-Weeb GitHub Repository"
-                        "https://raw.githubusercontent.com/Robert-Nogueira/elcord-weeb/master/icons/")
+                 "https://raw.githubusercontent.com/Robert-Nogueira/elcord-weeb/master/icons/")
                  (string :tag "Use the specified URL base")
                  (function :tag "Call the function with icon name as an arg to get the URL base."))
+  :group 'elcord)
+
+(defun elcord--make-buttons (&optional button1 button2)
+  "Create Discord Rich Presence buttons list.
+BUTTON1 and BUTTON2 are cons cells of the form (LABEL . URL)."
+  (let ((buttons ()))
+    (when button1
+      (push `((:label . ,(car button1))
+              (:url . ,(cdr button1))) buttons))
+    (when button2
+      (push `((:label . ,(car button2))
+              (:url . ,(cdr button2))) buttons))
+    (when buttons
+      `(("buttons" . ,(vconcat buttons))))))
+
+(defcustom elcord-buttons nil
+  "List of buttons to display in Discord Rich Presence.
+Each button is a cons cell of the form (LABEL . URL).
+Maximum of 2 buttons allowed."
+  :type '(repeat (cons (string :tag "Label")
+                       (string :tag "URL")))
   :group 'elcord)
 
 (defcustom elcord-refresh-rate 15
@@ -77,139 +99,140 @@ This makes the mode icon appear as the large icon and the editor icon as the sma
 
 (defcustom elcord-idle-message "Getting something to drink..."
   "Message to show when elcord status is idle."
-  :type 'string)
+  :type 'string
+  :group 'elcord)
 
-(defcustom elcord-quiet 'nil
-  "Whether or not to supress elcord messages (connecting, disconnecting, etc.)"
+(defcustom elcord-quiet nil
+  "Whether or not to supress elcord messages.
+This includes connecting, disconnecting, etc."
   :type 'boolean
   :group 'elcord)
 
 (defcustom elcord-mode-icon-alist '((agda-mode . "agda-mode_icon")
-                                    (assembly-mode . "assembly-mode_icon")
-                                    (bqn-mode . "bqn-mode_icon")
-                                    (c-mode . "c-mode_icon")
-                                    (c++-mode . "cpp-mode_icon")
-                                    (clojure-mode . "clojure-mode_icon")
-                                    (csharp-mode . "csharp-mode_icon")
-                                    (comint-mode . "comint-mode_icon")
-                                    (cperl-mode . "cperl-mode_icon")
-                                    (dockerfile-mode . "dockerfile-mode_icon")
-                                    (elixir-mode . "elixir-mode_icon")
-                                    (emacs-lisp-mode . (elcord--editor-icon))
-                                    (enh-ruby-mode . "ruby-mode_icon")
-                                    (erlang-mode . "erlang-mode_icon")
-                                    (forth-mode . "forth-mode_icon")
-                                    (fortran-mode . "fortran-mode_icon")
-                                    (fsharp-mode . "fsharp-mode_icon")
-                                    (gdscript-mode . "gdscript-mode_icon")
-                                    (haskell-mode . "haskell-mode_icon")
-                                    (haskell-interactive-mode . "haskell-mode_icon")
-                                    (hy-mode . "hy-mode_icon")
-                                    (java-mode . "java-mode_icon")
-                                    (julia-mode . "julia-mode_icon")
-                                    (js-mode . "javascript-mode_icon")
-                                    (kotlin-mode . "kotlin-mode_icon")
-                                    (go-mode . "go-mode_icon")
-                                    (latex-mode . "latex-mode_icon")
-                                    (lisp-mode . "lisp-mode_icon")
-                                    (lua-mode . "lua-mode_icon")
-                                    (magit-mode . "magit-mode_icon")
-                                    (markdown-mode . "markdown-mode_icon")
-                                    (meson-mode . "meson-mode_icon")
-                                    (nasm-mode . "nasm-mode_icon")
-                                    (nim-mode . "nim-mode_icon")
-                                    (nix-mode . "nix-mode_icon")
-                                    (ocaml-mode . "ocaml-mode_icon")
-                                    (octave-mode . "octave-mode_icon")
-                                    (org-mode . "org-mode_icon")
-                                    (pascal-mode . "pascal-mode_icon")
-                                    (php-mode . "php-mode_icon")
-                                    (prolog-mode . "prolog-mode_icon")
-                                    (puml-mode . "puml-mode_icon")
-                                    (puppet-mode . "puppet-mode_icon")
-                                    (python-mode . "python-mode_icon")
-                                    (racket-mode . "racket-mode_icon")
-                                    (ruby-mode . "ruby-mode_icon")
-                                    (rust-mode . "rust-mode_icon")
-                                    (rustic-mode . "rust-mode_icon")
-                                    (scala-mode . "scala-mode_icon")
-                                    (solidity-mode . "solidity-mode_icon")
-                                    (sh-mode . "comint-mode_icon")
-                                    (terraform-mode . "terraform-mode_icon")
-                                    (typescript-mode . "typescript-mode_icon")
-                                    (zig-mode . "zig-mode_icon")
-                                    (janet-mode . "janet-mode_icon")
-                                    ("^slime-.*" . "lisp-mode_icon")
-                                    ("^sly-.*$" . "lisp-mode_icon"))
+                                   (assembly-mode . "assembly-mode_icon")
+                                   (bqn-mode . "bqn-mode_icon")
+                                   (c-mode . "c-mode_icon")
+                                   (c++-mode . "cpp-mode_icon")
+                                   (clojure-mode . "clojure-mode_icon")
+                                   (csharp-mode . "csharp-mode_icon")
+                                   (comint-mode . "comint-mode_icon")
+                                   (cperl-mode . "cperl-mode_icon")
+                                   (dockerfile-mode . "dockerfile-mode_icon")
+                                   (elixir-mode . "elixir-mode_icon")
+                                   (emacs-lisp-mode . (elcord--editor-icon))
+                                   (enh-ruby-mode . "ruby-mode_icon")
+                                   (erc-mode . "irc-mode_icon")
+                                   (erlang-mode . "erlang-mode_icon")
+                                   (forth-mode . "forth-mode_icon")
+                                   (fortran-mode . "fortran-mode_icon")
+                                   (fsharp-mode . "fsharp-mode_icon")
+                                   (gdscript-mode . "gdscript-mode_icon")
+                                   (haskell-mode . "haskell-mode_icon")
+                                   (haskell-interactive-mode . "haskell-mode_icon")
+                                   (hy-mode . "hy-mode_icon")
+                                   (java-mode . "java-mode_icon")
+                                   (julia-mode . "julia-mode_icon")
+                                   (js-mode . "javascript-mode_icon")
+                                   (kotlin-mode . "kotlin-mode_icon")
+                                   (go-mode . "go-mode_icon")
+                                   (latex-mode . "latex-mode_icon")
+                                   (lisp-mode . "lisp-mode_icon")
+                                   (lua-mode . "lua-mode_icon")
+                                   (magit-mode . "magit-mode_icon")
+                                   (markdown-mode . "markdown-mode_icon")
+                                   (meson-mode . "meson-mode_icon")
+                                   (nasm-mode . "nasm-mode_icon")
+                                   (nim-mode . "nim-mode_icon")
+                                   (nix-mode . "nix-mode_icon")
+                                   (ocaml-mode . "ocaml-mode_icon")
+                                   (octave-mode . "octave-mode_icon")
+                                   (org-mode . "org-mode_icon")
+                                   (pascal-mode . "pascal-mode_icon")
+                                   (php-mode . "php-mode_icon")
+                                   (prolog-mode . "prolog-mode_icon")
+                                   (puml-mode . "puml-mode_icon")
+                                   (puppet-mode . "puppet-mode_icon")
+                                   (python-mode . "python-mode_icon")
+                                   (racket-mode . "racket-mode_icon")
+                                   (ruby-mode . "ruby-mode_icon")
+                                   (rust-mode . "rust-mode_icon")
+                                   (rustic-mode . "rust-mode_icon")
+                                   (scala-mode . "scala-mode_icon")
+                                   (solidity-mode . "solidity-mode_icon")
+                                   (sh-mode . "comint-mode_icon")
+                                   (terraform-mode . "terraform-mode_icon")
+                                   (typescript-mode . "typescript-mode_icon")
+                                   (zig-mode . "zig-mode_icon")
+                                   (janet-mode . "janet-mode_icon")
+                                   ("^slime-.*" . "lisp-mode_icon")
+                                   ("^sly-.*$" . "lisp-mode_icon"))
   "Mapping alist of major modes to icon names to have elcord use.
 Note, these icon names must be available as 'small_image' in Discord."
   :type '(alist :key-type (choice (symbol :tag "Mode name")
                                   (regexp :tag "Regex"))
                 :value-type (choice (string :tag "Icon name")
-                                    (function :tag "Mapping function")))
+                                   (function :tag "Mapping function")))
   :group 'elcord)
 
 (defcustom elcord-mode-text-alist '((agda-mode . "Agda")
-                                    (assembly-mode . "Assembly")
-                                    (bqn-mode . "BQN")
-                                    (c-mode . "C  ")
-                                    (c++-mode . "C++")
-                                    (csharp-mode . "C#")
-                                    (cperl-mode . "Perl")
-                                    (elixir-mode . "Elixir")
-                                    (enh-ruby-mode . "Ruby")
-                                    (erlang-mode . "Erlang")
-                                    (fsharp-mode . "F#")
-                                    (gdscript-mode . "GDScript")
-                                    (java-mode . "Java")
-                                    (julia-mode . "Julia")
-                                    (lisp-mode . "Common Lisp")
-                                    (markdown-mode . "Markdown")
-                                    (magit-mode . "It's Magit!")
-                                    ("mhtml-mode" . "HTML")
-                                    (nasm-mode . "NASM")
-                                    (nim-mode . "Nim")
-                                    (ocaml-mode . "OCaml")
-                                    (pascal-mode . "Pascal")
-                                    (prolog-mode . "Prolog")
-                                    (puml-mode . "UML")
-                                    (scala-mode . "Scala")
-                                    (sh-mode . "Shell")
-                                    (slime-repl-mode . "SLIME-REPL")
-                                    (sly-mrepl-mode . "Sly-REPL")
-                                    (solidity-mode . "Solidity")
-                                    (terraform-mode . "Terraform")
-                                    (typescript-mode . "Typescript")
-                                    (php-mode "PHP"))
+                                   (assembly-mode . "Assembly")
+                                   (bqn-mode . "BQN")
+                                   (c-mode . "C  ")
+                                   (c++-mode . "C++")
+                                   (csharp-mode . "C#")
+                                   (cperl-mode . "Perl")
+                                   (elixir-mode . "Elixir")
+                                   (enh-ruby-mode . "Ruby")
+                                   (erlang-mode . "Erlang")
+                                   (fsharp-mode . "F#")
+                                   (gdscript-mode . "GDScript")
+                                   (java-mode . "Java")
+                                   (julia-mode . "Julia")
+                                   (lisp-mode . "Common Lisp")
+                                   (markdown-mode . "Markdown")
+                                   (magit-mode . "It's Magit!")
+                                   ("mhtml-mode" . "HTML")
+                                   (nasm-mode . "NASM")
+                                   (nim-mode . "Nim")
+                                   (ocaml-mode . "OCaml")
+                                   (pascal-mode . "Pascal")
+                                   (prolog-mode . "Prolog")
+                                   (puml-mode . "UML")
+                                   (scala-mode . "Scala")
+                                   (sh-mode . "Shell")
+                                   (slime-repl-mode . "SLIME-REPL")
+                                   (sly-mrepl-mode . "Sly-REPL")
+                                   (solidity-mode . "Solidity")
+                                   (terraform-mode . "Terraform")
+                                   (typescript-mode . "Typescript")
+                                   (php-mode "PHP"))
   "Mapping alist of major modes to text labels to have elcord use."
   :type '(alist :key-type (choice (symbol :tag "Mode name")
                                   (regexp :tag "Regex"))
                 :value-type (choice (string :tag "Text label")
-                                    (function :tag "Mapping function")))
+                                   (function :tag "Mapping function")))
   :group 'elcord)
 
-(defcustom elcord-display-elapsed 't
-  "When enabled, Discord status will display the elapsed time since Emacs \
-has been started."
+(defcustom elcord-display-elapsed t
+  "When enabled, Discord status will display the elapsed time.
+This shows how long Emacs has been started."
   :type 'boolean
   :group 'elcord)
 
 (defvar elcord--startup-time (string-to-number (format-time-string "%s" (current-time))))
 
-(defcustom elcord-display-buffer-details 't
+(defcustom elcord-display-buffer-details t
   "When enabled, Discord status will display buffer name and line numbers:
 \"Editing <buffer-name>\"
-  \"Line <line-number> (<line-number> of <line-count>)\"
+\"Line <line-number> (<line-number> of <line-count>)\"
 
 Otherwise, it will display:
-  \"Editing\"
-  \"<elcord-mode-text>\"
-
-The mode text is the same found by `elcord-mode-text-alist'"
+\"Editing\"
+\"<elcord-mode-text>\""
   :type 'boolean
   :group 'elcord)
 
-(defcustom elcord-display-line-numbers 't
+(defcustom elcord-display-line-numbers t
   "When enabled, shows the total line numbers of current buffer.
 Including the position of the cursor in the buffer."
   :type 'boolean
@@ -221,18 +244,20 @@ Swap this with your own function if you want a custom buffer-details message."
   :type 'function
   :group 'elcord)
 
-(defcustom elcord-use-major-mode-as-main-icon 'nil
-  "When enabled, the major mode determines the main icon, rather than it being the editor."
+(defcustom elcord-use-major-mode-as-main-icon nil
+  "When enabled, the major mode determines the main icon.
+Rather than it being the editor."
   :type 'boolean
   :group 'elcord)
 
-(defcustom elcord-show-small-icon 't
+(defcustom elcord-show-small-icon t
   "When enabled, show the small icon as well as the main icon."
   :type 'boolean
   :group 'elcord)
 
-(defcustom elcord-editor-icon 'nil
-  "Icon to use for the text editor. When nil, use the editor's native icon."
+(defcustom elcord-editor-icon nil
+  "Icon to use for the text editor.
+When nil, use the editor's native icon."
   :type '(choice (const :tag "Editor Default" nil)
                  (const :tag "Emacs" "emacs_icon")
                  (const :tag "Emacs (Pen)" "emacs_pen_icon")
@@ -244,15 +269,15 @@ Swap this with your own function if you want a custom buffer-details message."
                  (const :tag "Doom Cute" "doom_cute_icon"))
   :group 'elcord)
 
-(defcustom elcord-boring-buffers-regexp-list '("^ "
-                                               "\\\\*Messages\\\\*")
+(defcustom elcord-boring-buffers-regexp-list '("^ " "\\\\*Messages\\\\*")
   "A list of regexp's to match boring buffers.
 When visiting a boring buffer, it will not show in the elcord presence."
   :type '(repeat regexp)
   :group 'elcord)
 
-(defcustom elcord-discord-ipc-path 'nil
-  "Path to the Discord IPC pipe. When nil, the default path is used."
+(defcustom elcord-discord-ipc-path nil
+  "Path to the Discord IPC pipe.
+When nil, the default path is used."
   :type 'string
   :group 'elcord)
 
@@ -286,7 +311,8 @@ When visiting a boring buffer, it will not show in the elcord presence."
 nil when elcord is not active.")
 
 (defvar elcord--reconnect-timer nil
-  "Timer used by elcord to attempt connection periodically, when active but disconnected.")
+  "Timer used by elcord to attempt connection periodically.
+When active but disconnected.")
 
 (defvar elcord--sock nil
   "The process used to communicate with Discord IPC.")
@@ -298,8 +324,8 @@ nil when elcord is not active.")
   "Last known buffer recorded by elcord.")
 
 (defvar elcord--stdpipe-path (expand-file-name
-                              "stdpipe.ps1"
-                              (file-name-directory (file-truename load-file-name)))
+                             "stdpipe.ps1"
+                             (file-name-directory (file-truename load-file-name)))
   "Path to the 'stdpipe' script.
 On Windows, this script is used as a proxy for the Discord named pipe.
 Unused on other platforms.")
@@ -307,12 +333,28 @@ Unused on other platforms.")
 (defvar elcord--idle-status nil
   "Current idle status.")
 
+(defun elcord--set-presence ()
+  "Set presence with optional buttons."
+  (let* ((buttons (when elcord-buttons
+                   (elcord--make-buttons
+                    (nth 0 elcord-buttons)
+                    (nth 1 elcord-buttons))))
+         (activity
+          `(("assets" . (,@(elcord--mode-icon-and-text)))
+            ,@(elcord--details-and-state)
+            ,@buttons))
+         (nonce (format-time-string "%s%N"))
+         (presence
+          `(("cmd" . "SET_ACTIVITY")
+            ("args" . (("activity" . ,activity)
+                       ("pid" . ,(emacs-pid))))
+            ("nonce" . ,nonce))))
+    (elcord--send-packet 1 presence)))
+
 (defun elcord--find-discord-ipc-pipe ()
   "Find the path to the Discord IPC pipe."
   (if elcord-discord-ipc-path
-      ;; If the user has specified the pipe location, trust them
       elcord-discord-ipc-path
-    ;; Otherwise, try to find the pipe in the usual places
     (let ((candidates
            (mapcan
             (lambda (dir)
@@ -357,7 +399,7 @@ Unused on other platforms.")
         :noquery t)))))
 
 (defun elcord--enable ()
-  "Called when variable ‘elcord-mode’ is enabled."
+  "Called when variable 'elcord-mode' is enabled."
   (setq elcord--startup-time (string-to-number (format-time-string "%s" (current-time))))
   (unless (elcord--resolve-client-id)
     (warn "elcord: no elcord-client-id available"))
@@ -369,25 +411,15 @@ Unused on other platforms.")
   (when elcord-idle-timer
     (run-with-idle-timer
      elcord-idle-timer t 'elcord--start-idle))
-
-  ;;Start trying to connect
   (elcord--start-reconnect))
 
 (defun elcord--disable ()
-  "Called when variable ‘elcord-mode’ is disabled."
-  ;;Cancel updates
+  "Called when variable 'elcord-mode' is disabled."
   (elcord--cancel-updates)
-  ;;Cancel any reconnect attempt
   (elcord--cancel-reconnect)
-
-  ;;If we're currently connected
   (when elcord--sock
-    ;;Empty our presence
     (elcord--empty-presence))
-
-  ;;Stop running idle hook
   (cancel-function-timers 'elcord--start-idle)
-
   (elcord--disconnect))
 
 (defun elcord--empty-presence ()
@@ -401,39 +433,28 @@ Unused on other platforms.")
     (elcord--send-packet 1 presence)))
 
 (defun elcord--resolve-client-id ()
-  "Evaluate `elcord-client-id' and return the client ID to use."
+  "Evaluate 'elcord-client-id' and return the client ID to use."
   (cl-typecase elcord-client-id
-    (null
-     nil)
-    (string
-     elcord-client-id)
-    (function
-     (funcall elcord-client-id))))
+    (null nil)
+    (string elcord-client-id)
+    (function (funcall elcord-client-id))))
 
 (defun elcord--resolve-icon-base (icon)
-  "Evaluate `elcord-icon-base' and return the URL to use.
+  "Evaluate 'elcord-icon-base' and return the URL to use.
 Argument ICON the name of the icon we're resolving."
   (cl-typecase elcord-icon-base
-    (null
-     nil)
-    (string
-     (concat elcord-icon-base icon ".png"))
-    (function
-     (funcall elcord-icon-base icon))))
+    (null nil)
+    (string (concat elcord-icon-base icon ".png"))
+    (function (funcall elcord-icon-base icon))))
 
 (defun elcord--connection-sentinel (process evnt)
-  "Track connection state change on Discord connection.
-Argument PROCESS The process this sentinel is attached to.
-Argument EVNT The event which triggered the sentinel to run."
+  "Track connection state change on Discord connection."
   (cl-case (process-status process)
-    ((closed exit)
-     (elcord--handle-disconnect))
-    (t)))
+    ((closed exit) (elcord--handle-disconnect))
+    (t nil)))
 
 (defun elcord--connection-filter (process evnt)
-  "Track incoming data from Discord connection.
-Argument PROCESS The process this filter is attached to.
-Argument EVNT The available output from the process."
+  "Track incoming data from Discord connection."
   (elcord--start-updates))
 
 (defun elcord--connect ()
@@ -459,8 +480,6 @@ Argument EVNT The available output from the process."
 (defun elcord--reconnect ()
   "Attempt to reconnect elcord."
   (when (elcord--connect)
-    ;;Reconnected.
-    ;; Put a pending message unless we already got first handshake
     (unless (or elcord--update-presence-timer elcord-quiet)
       (message "elcord: connecting..."))
     (elcord--cancel-reconnect)))
@@ -480,48 +499,31 @@ Argument EVNT The available output from the process."
   "Handles reconnecting when socket disconnects."
   (unless elcord-quiet
     (message "elcord: disconnected by remote host"))
-  ;;Stop updating presence for now
   (elcord--cancel-updates)
   (setq elcord--sock nil)
-  ;;Start trying to reconnect
   (when elcord-mode
     (elcord--start-reconnect)))
 
 (defun elcord--send-packet (opcode obj)
-  "Packs and sends a packet to the IPC server.
-Argument OPCODE OP code to send.
-Argument OBJ The data to send to the IPC server."
-  (let* ((jsonstr
-          (encode-coding-string
-           (json-encode obj)
-           'utf-8))
+  "Packs and sends a packet to the IPC server."
+  (let* ((jsonstr (encode-coding-string (json-encode obj) 'utf-8))
          (datalen (length jsonstr))
-         (message-spec
-          `((:op u32r)
-            (:len u32r)
-            (:data str ,datalen)))
-         (packet
-          (bindat-pack
-           message-spec
-           `((:op . ,opcode)
-             (:len . ,datalen)
-             (:data . ,jsonstr)))))
+         (message-spec `((:op u32r) (:len u32r) (:data str ,datalen)))
+         (packet (bindat-pack message-spec
+                             `((:op . ,opcode)
+                               (:len . ,datalen)
+                               (:data . ,jsonstr)))))
     (when elcord--sock
       (process-send-string elcord--sock packet))))
 
 (defun elcord--test-match-p (test mode)
-  "Test `MODE' against `TEST'.
-if `test' is a symbol, it is compared directly to `mode'.
-if `test' is a string, it is a regex to compare against the name of `mode'."
+  "Test 'MODE' against 'TEST'."
   (cl-typecase test
     (symbol (eq test mode))
     (string (string-match-p test (symbol-name mode)))))
 
 (defun elcord--entry-value (entry mode)
-  "Test `ENTRY' against `MODE'.  Return the value of `ENTRY'.
-`entry' is a cons who's `car' is `elcord--test-match-p' with `mode''
-When `mode' matches, if the `cdr' of `entry' is a string, return that,
-otherwise if it is a function, call it with `mode' and return that value."
+  "Test 'ENTRY' against 'MODE'. Return the value of 'ENTRY'."
   (when (elcord--test-match-p (car entry) mode)
     (let ((mapping (cdr entry)))
       (cl-typecase mapping
@@ -529,12 +531,8 @@ otherwise if it is a function, call it with `mode' and return that value."
         (function (funcall mapping mode))))))
 
 (defun elcord--find-mode-entry (alist mode)
-  "Get the first entry in `ALIST' matching `MODE'.
-`alist' Should be an alist like `elcord-mode-icon-alist' where each value is
- either a string,or a function of one argument `mode'.
- If it is a function, it should return a string, or nil if no match."
-  (let ((cell alist)
-        (result nil))
+  "Get the first entry in 'ALIST' matching 'MODE'."
+  (let ((cell alist) (result nil))
     (while cell
       (setq result (elcord--entry-value (car cell) mode)
             cell (if result nil (cdr cell))))
@@ -544,16 +542,13 @@ otherwise if it is a function, call it with `mode' and return that value."
   "The icon to use to represent the current editor."
   (elcord--resolve-icon-base
    (cond
-    ((progn elcord-editor-icon) elcord-editor-icon)
+    (elcord-editor-icon elcord-editor-icon)
     ((boundp 'spacemacs-version) "spacemacs_icon")
     ((boundp 'doom-version) "doom_icon")
     (t "emacs_icon"))))
 
 (defun elcord--mode-icon ()
-  "Figure out what icon to use for the current major mode.
-If an icon is mapped by `elcord-mode-icon-alist', then that is used.
-Otherwise, if the mode is a derived mode, try to find an icon for it.
-If no icon is available, use the default icon."
+  "Figure out what icon to use for the current major mode."
   (let ((mode major-mode)
         (ret (elcord--editor-icon)))
     (while mode
@@ -564,10 +559,7 @@ If no icon is available, use the default icon."
     ret))
 
 (defun elcord--mode-text ()
-  "Figure out what text to use for the current major mode.
-If an icon is mapped by `elcord-mode-text-alist', then that is used.
-Otherwise, if the mode is a derived mode, try to find text for its parent,
-If no text is available, use the value of `mode-name'."
+  "Figure out what text to use for the current major mode."
   (let ((mode major-mode)
         (ret mode-name))
     (while mode
@@ -580,11 +572,7 @@ If no text is available, use the value of `mode-name'."
     ret))
 
 (defun elcord--mode-icon-and-text ()
-  "Obtain the icon & text to use for the current major mode.
-\((\"large_text\" . <text>)
-  (\"large_image\" . <icon-name>)
-  (\"small_text\" . <text>)
-  (\"small_image\" . <icon-name>))"
+  "Obtain the icon & text to use for the current major mode."
   (let ((text (elcord--mode-text))
         (icon (elcord--mode-icon))
         large-text large-image
@@ -635,23 +623,9 @@ If no text is available, use the value of `mode-name'."
       (push (list "timestamps" (cons "start" elcord--startup-time)) activity))
     activity))
 
-(defun elcord--set-presence ()
-  "Set presence."
-  (let* ((activity
-          `(("assets" . (,@(elcord--mode-icon-and-text)))
-            ,@(elcord--details-and-state)))
-         (nonce (format-time-string "%s%N"))
-         (presence
-          `(("cmd" . "SET_ACTIVITY")
-            ("args" . (("activity" . ,activity)
-                       ("pid" . ,(emacs-pid))))
-            ("nonce" . ,nonce))))
-    (elcord--send-packet 1 presence)))
-
 (defun elcord--buffer-boring-p (buffer-name)
-  "Return non-nil if `BUFFER-NAME' is non-boring per `ELCORD-BORING-BUFFERS-REGEXP-LIST'."
-  (let ((cell elcord-boring-buffers-regexp-list)
-        (result nil))
+  "Return non-nil if 'BUFFER-NAME' is non-boring."
+  (let ((cell elcord-boring-buffers-regexp-list) (result nil))
     (while cell
       (if (string-match-p (car cell) buffer-name)
           (setq result t
@@ -661,8 +635,7 @@ If no text is available, use the value of `mode-name'."
 
 (defun elcord--find-non-boring-window ()
   "Try to find a live window displaying a non-boring buffer."
-  (let ((cell (window-list))
-        (result nil))
+  (let ((cell (window-list)) (result nil))
     (while cell
       (let ((window (car cell)))
         (if (not (elcord--buffer-boring-p (buffer-name (window-buffer window))))
@@ -672,24 +645,19 @@ If no text is available, use the value of `mode-name'."
     result))
 
 (defun elcord--try-update-presence (new-buffer-name new-buffer-position)
-  "Try updating presence with `NEW-BUFFER-NAME' and `NEW-BUFFER-POSITION' while handling errors and disconnections."
+  "Try updating presence with new buffer info."
   (setq elcord--last-known-buffer-name new-buffer-name
         elcord--last-known-position new-buffer-position)
   (condition-case err
-      ;;Try and set the presence
       (elcord--set-presence)
     (error
      (message "elcord: error setting presence: %s" (error-message-string err))
-     ;;If we hit an error, cancel updates
      (elcord--cancel-updates)
-     ;; Disconnect
      (elcord--disconnect)
-     ;; and try reconnecting
      (elcord--start-reconnect))))
 
 (defun elcord--update-presence ()
-  "Conditionally update presence by testing the current buffer/line.
-If there is no 'previous' buffer attempt to find a non-boring buffer to initialize to."
+  "Conditionally update presence by testing current buffer/line."
   (if (= elcord--last-known-position -1)
       (when-let ((window (elcord--find-non-boring-window)))
         (with-current-buffer (window-buffer window)
@@ -706,7 +674,6 @@ If there is no 'previous' buffer attempt to find a non-boring buffer to initiali
   (unless elcord--update-presence-timer
     (unless elcord-quiet
       (message "elcord: connected. starting updates"))
-    ;;Start sending updates now that we've heard from discord
     (setq elcord--last-known-position -1
           elcord--last-known-buffer-name ""
           elcord--update-presence-timer (run-at-time 0 elcord-refresh-rate 'elcord--update-presence))))
@@ -722,23 +689,18 @@ If there is no 'previous' buffer attempt to find a non-boring buffer to initiali
   (unless elcord--idle-status
     (unless elcord-quiet
       (message (format "elcord: %s" elcord-idle-message)))
-
-    ;;hacky way to stop updates and store elapsed time
     (cancel-timer elcord--update-presence-timer)
     (setq elcord--startup-time (string-to-number (format-time-string "%s" (time-subtract nil elcord--startup-time)))
-
           elcord--idle-status t)
-
-    (let* ((activity
-            `(("assets" . (,@(elcord--mode-icon-and-text)))
-              ("timestamps" ("start" ,@(string-to-number (format-time-string "%s" (current-time)))))
-              ("details" . "Idle") ("state" .  ,elcord-idle-message)))
+    (let* ((activity `(("assets" . (,@(elcord--mode-icon-and-text)))
+                       ("timestamps" ("start" ,(string-to-number (format-time-string "%s" (current-time)))))
+                       ("details" . "Idle")
+                       ("state" . ,elcord-idle-message)))
            (nonce (format-time-string "%s%N"))
-           (presence
-            `(("cmd" . "SET_ACTIVITY")
-              ("args" . (("activity" . ,activity)
-                         ("pid" . ,(emacs-pid))))
-              ("nonce" . ,nonce))))
+           (presence `(("cmd" . "SET_ACTIVITY")
+                       ("args" . (("activity" . ,activity)
+                                  ("pid" . ,(emacs-pid))))
+                       ("nonce" . ,nonce))))
       (elcord--send-packet 1 presence))
     (add-hook 'pre-command-hook 'elcord--cancel-idle)))
 
@@ -746,17 +708,12 @@ If there is no 'previous' buffer attempt to find a non-boring buffer to initiali
   "Resume presence update and timer."
   (when elcord--idle-status
     (remove-hook 'pre-command-hook 'elcord--cancel-idle)
-
-    ;;resume timer with elapsed time
     (setq elcord--startup-time (string-to-number (format-time-string "%s" (time-subtract nil elcord--startup-time)))
           elcord--idle-status nil
-          ;;hacky way to resume updates
           elcord--update-presence-timer nil)
     (elcord--start-updates)
-
     (unless elcord-quiet
       (message "elcord: welcome back"))))
-
 
 (provide 'elcord)
 ;;; elcord.el ends here
