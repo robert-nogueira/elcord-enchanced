@@ -1,63 +1,101 @@
-# elcord
+# elcord-enhanced ✨
 
-[![MELPA](https://melpa.org/packages/elcord-badge.svg)](https://melpa.org/#/elcord)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-![](images/elcord-preview.png)
+Enhanced Discord Rich Presence integration for Emacs with modern visuals and deeper customization.
 
-## Discord Rich Presence for Emacs
+![](images/elcord-enchanced-preview.png)
 
-Show off your emacs-savy ways to all your Discord friends and strangers.
+## ✨ Features
 
-This package will connect with a local Discord client to update your status via the Discord Rich Presence API.
+- **Rich Editor Presence**:
+  - Displays current file/buffer
+  - Shows major mode with custom icons
+  - Tracks cursor position
+  - Configurable line number display
 
-## Installing
+- **Enhanced Customization**:
+  - Modern icon sets (including anime-themed alternatives)
+  - switch small and large icon
+  - Button support (up to 2 external links)
 
-### Installing from MELPA
+## 🚀 Installation
 
-elcord is available from [MELPA](https://melpa.org/)
+### Recommended Method (straight.el)
 
-To install:
-`M-x package-install RET elcord RET`
-
-### Installation from Source
-
-Simply place [elcord.el](elcord.el) file in a place Emacs can find it load/require it.
-
-#### Note for Windows
-
-Make sure that the [stdpipe.ps1](stdpipe.ps1) is in the same directory as the [elcord.el](elcord.el) file.
-
-Talking with Discord's IPC mechanism is achieves through this PowerShell script to get around Emacs' inability to talk through named pipes on Windows.
-Everything should work out-of-the-box. Just make sure this PowerShell script is installed in the same directory as your [elcord.el](elcord.el) file.
-
-## Usage
-
-After installing, enable `elcord-mode`.
-
-Minimal init file:
-
-``` emacs-lisp
-(require 'elcord)
-(elcord-mode)
+```elisp
+(straight-use-package
+ '(elcord :type git :host github :repo "robert-nogueira/elcord-enhanced"
+          :files ("*.el" "*.ps1" "images/*")))
 ```
 
-There are customization options available.
+### Alternative Methods
 
-Try
-`M-x customize-group RET elcord RET`
+<details> <summary>Manual Installation</summary>
 
-## Icons
+    Clone the repository:
+    bash
 
-While the alist `elcord-mode-icon-alist` is customizable, all icon ID's are linked to the application pointed to by `elcord-client-id`.
-If you'd like to request a new icon for a major mode be added, please open an [issue](../../issues).
+git clone https://github.com/robert-nogueira/elcord-enhanced.git ~/.emacs.d/elcord-enhanced
 
-### Custom Discord Application
+Add to your init file:
+elisp
 
-Alternatively, you may create your own 'Application' with its own set of icons.
+    (add-to-list 'load-path "~/.emacs.d/elcord-enhanced")
+    (require 'elcord)
 
-For creating an 'Application':
-1. Visit Discord's [application page](https://discordapp.com/developers/applications/me/)
-2. Create a new application and upload icons as a "small" asset.
+</details>
 
-After you've created your application, Customize `elcord-client-id` to be the new application's client ID,
-and set the value of `elcord-mode-icon-alist` as appropriate to reference your new icons.
+## ⚙️ Basic Configuration
+```elisp
+(use-package elcord
+  :straight t
+  :config
+  (setq elcord-refresh-rate 15)          ; Update frequency in seconds
+  (setq elcord-display-buffer-details t) ; Show buffer info
+
+  ;; Visual customization
+  (setq elcord-editor-icon "doom")      ; Editor icon theme
+  (setq elcord-use-major-mode-as-main-icon t) ; Use language icons as main
+
+  ;; Rich presence buttons (max 2)
+  (setq elcord-buttons '(("🌟 My Dotfiles" . "https://github.com/me/dotfiles")
+                         ("🐧 Emacs Config" . "https://github.com/me/emacs-config")))
+
+  (elcord-mode))  ; Enable the mode
+```
+
+## ❓ Frequently Asked Questions
+Why don't my buttons appear in Discord?
+
+    Ensure you're using the official Discord client (not web version)
+    Check that "Display current activity" is enabled in Discord settings
+    Buttons may not show on mobile devices
+
+How can I add custom icons?
+
+    Host your icons online (GitHub repo recommended)
+    Add mappings to elcord-mode-icon-alist
+    Set elcord-icon-base to your icons' base URL
+
+## 🤝 Contributing
+
+### We welcome contributions! Please:
+
+    Fork the repository
+
+    Create a feature branch
+
+    Submit a pull request
+
+### Guidelines:
+
+    Maintain backward compatibility
+
+    Follow existing code style
+
+    Document new features
+
+## 📜 License
+
+MIT License
