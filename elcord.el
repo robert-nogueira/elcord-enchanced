@@ -55,7 +55,7 @@ This makes the mode icon appear as the large icon and the editor icon as the sma
 (defcustom elcord-icon-base
   (if elcord-use-original-icons
       "https://raw.githubusercontent.com/Mstrodl/elcord/master/icons/"
-    "https://raw.githubusercontent.com/robert-nogueira/elcord-weeb/master/icons/")
+    "https://raw.githubusercontent.com/robert-nogueira/elcord-enchanced/master/icons/")
   "Base URL for icon images. Mode icons will be loaded from this URL + icon name + '.png'"
   :type '(choice (const :tag "Elcord GitHub Repository"
                         "https://raw.githubusercontent.com/Mstrodl/elcord/master/icons/")
